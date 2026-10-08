@@ -105,7 +105,7 @@ export const usage = `
 </blockquote>
 
 <h3>🖼️ 渲染方式</h3>
-<p>基于 <b>Puppeteer</b> 将 HTML 模板渲染为图片输出，支持自定义渲染等待策略和字体文件。</p>
+<p>基于 <b>Puppeteer</b> 将 HTML 模板渲染为图片输出，默认使用 npm 的 LXGW 文楷等宽字体，也可选择 Gitee / GitHub Release 下载、本地字体路径或系统默认字体。</p>
 
 <h3>📅 节假日支持</h3>
 <p>内置 2026 年节假日数据，节假日自动提示休息消息，调休上班日正常显示课程。</p>

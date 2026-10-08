@@ -1,8 +1,6 @@
 import type { Context } from 'koishi'
 import { h } from 'koishi'
 import type {} from 'koishi-plugin-puppeteer'
-import fs from 'fs'
-import path from 'path'
 import {
   renderGroupScheduleTemplate,
   renderPersonalScheduleTemplate,
@@ -10,13 +8,12 @@ import {
 } from './template'
 import { renderWeeklyScheduleTemplate } from './weekly-template'
 import type { DayCourseView, RankingItem, WeeklyDayView } from '../types'
-import type { RenderColors, Config } from '../config'
+import type { RenderColors, Config, TextFontMode } from '../config'
 import { defaultColors } from '../config'
+import { resolveTextFont, type ResolvedTextFont } from '../utils/font'
 
 export class ImageGenerator {
-  private fontPath = ''
-  private fontName = ''
-  private fontBuffer: Buffer | null = null
+  private fontPromise: Promise<ResolvedTextFont> | null = null
   private verbose = false
   private colors: RenderColors
   private footerText = ''
@@ -24,58 +21,60 @@ export class ImageGenerator {
 
   constructor(
     private ctx: Context,
-    fontPath: string,
+    private fontMode: TextFontMode,
+    private fontPath: string,
     private waitUntil: 'load' | 'domcontentloaded' | 'networkidle0' | 'networkidle2' = 'load',
     verbose = false,
     colors?: RenderColors,
     footerText = '',
     nameDisplayStyle: Config['nameDisplayStyle'] = 'name-card',
   ) {
-    this.fontPath = fontPath
     this.verbose = verbose
     this.colors = colors ?? defaultColors
     this.footerText = footerText
     this.nameDisplayStyle = nameDisplayStyle
-    if (!fontPath) return
-    try {
-      if (!fs.existsSync(fontPath)) {
-        ctx.logger.warn('[course-schedule] 字体文件不存在，将使用系统默认字体:', fontPath)
-        return
-      }
-      this.fontBuffer = fs.readFileSync(fontPath)
-      this.fontName = path.basename(fontPath, path.extname(fontPath))
-      ctx.logger.info(`[course-schedule] 字体已加载: ${this.fontName} (${(this.fontBuffer.length / 1024).toFixed(1)} KB)`)
-    } catch (e: any) {
-      ctx.logger.warn('[course-schedule] 字体加载失败，将使用系统默认字体:', fontPath, `(${e.message})`)
-    }
   }
 
   async renderPersonalSchedule(items: DayCourseView[], targetDate: Date) {
     this.log('[render] 个人课表, 课程数=', items.length)
+    const font = await this.getFont()
     const title = `我的课表 · ${targetDate.toLocaleDateString('zh-CN')}`
     const timestamp = this.getTimestamp()
-    return this.renderHtml(renderPersonalScheduleTemplate(items, title, timestamp, this.fontName, this.colors, this.footerText, this.nameDisplayStyle), '个人课表')
+    return this.renderHtml(renderPersonalScheduleTemplate(items, title, timestamp, font.family, this.colors, this.footerText, this.nameDisplayStyle), '个人课表', font)
   }
 
   async renderGroupSchedule(items: DayCourseView[], targetDate: Date) {
     this.log('[render] 群课表, 用户数=', items.length)
+    const font = await this.getFont()
     const logFn = this.verbose ? (...args: unknown[]) => this.log('[render][verbose]', ...args) : undefined
     const timestamp = this.getTimestamp()
-    const html = renderGroupScheduleTemplate(items, '群友在上什么课?', this.fontName, this.colors, logFn, this.footerText, timestamp, this.nameDisplayStyle)
+    const html = renderGroupScheduleTemplate(items, '群友在上什么课?', font.family, this.colors, logFn, this.footerText, timestamp, this.nameDisplayStyle)
     this.log('[render] 群课表HTML已生成, length=', html.length)
-    return this.renderHtml(html, '群课表')
+    return this.renderHtml(html, '群课表', font)
   }
 
   async renderRanking(items: RankingItem[], dateRange: string) {
     this.log('[render] 排行, 人数=', items.length)
+    const font = await this.getFont()
     const timestamp = this.getTimestamp()
-    return this.renderHtml(renderRankingTemplate(items, dateRange, this.fontName, this.footerText, timestamp, this.nameDisplayStyle), '排行')
+    return this.renderHtml(renderRankingTemplate(items, dateRange, font.family, this.footerText, timestamp, this.nameDisplayStyle), '排行', font)
   }
 
   async renderWeeklySchedule(username: string, nickname: string, week: number, dateRange: string, days: WeeklyDayView[]) {
     this.log('[render] 周课表, 周数=', week, '天数=', days.length)
+    const font = await this.getFont()
     const timestamp = this.getTimestamp()
-    return this.renderHtml(renderWeeklyScheduleTemplate(username, nickname, week, dateRange, days, timestamp, this.fontName, this.colors, this.footerText, this.nameDisplayStyle), '周课表')
+    return this.renderHtml(renderWeeklyScheduleTemplate(username, nickname, week, dateRange, days, timestamp, font.family, this.colors, this.footerText, this.nameDisplayStyle), '周课表', font)
+  }
+
+  private getFont(): Promise<ResolvedTextFont> {
+    if (!this.fontPromise) {
+      this.fontPromise = resolveTextFont(this.ctx, this.fontMode, this.fontPath).catch((error: any) => {
+        this.ctx.logger.warn('[course-schedule] 字体解析失败，将使用系统默认字体:', error?.message || error)
+        return { css: '', family: '', source: 'system' as const }
+      })
+    }
+    return this.fontPromise
   }
 
   private getTimestamp(): string {
@@ -87,46 +86,31 @@ export class ImageGenerator {
     this.ctx.logger.info('[course-schedule]', ...args)
   }
 
-  private async injectFont(page: any) {
-    if (!this.fontBuffer || !this.fontName) return
-
+  private async injectFont(page: any, font: ResolvedTextFont) {
+    if (!font.css) return
     try {
-      const base64 = this.fontBuffer.toString('base64')
-      await page.addStyleTag({
-        content: `@font-face{font-family:'${this.fontName}';src:url('data:font/truetype;base64,${base64}') format('truetype');font-display:swap}`,
-      })
-      this.ctx.logger.info(`[course-schedule] 字体已注入: ${this.fontName} (base64, ${(base64.length / 1024).toFixed(0)} KB)`)
-      return
+      await page.addStyleTag({ content: font.css })
+      this.ctx.logger.info(`[course-schedule] 字体已注入: ${font.family} (${font.source})`)
     } catch (e: any) {
-      this.ctx.logger.info('[course-schedule] base64 注入失败，回退到 file://:', e.message)
-    }
-
-    const absPath = path.resolve(this.fontPath).replace(/\\/g, '/')
-    try {
-      await page.addStyleTag({
-        content: `@font-face{font-family:'${this.fontName}';src:local('${this.fontName}'),url('file:///${absPath}') format('truetype');font-display:swap}`,
-      })
-      this.ctx.logger.info(`[course-schedule] 字体通过 file:// 协议注入: ${this.fontName}`)
-    } catch (e: any) {
-      this.ctx.logger.warn('[course-schedule] file:// 字体注入也失败，使用系统字体:', e.message)
+      this.ctx.logger.warn('[course-schedule] 字体注入失败，将使用模板字体回退:', e.message)
     }
   }
 
-  private async waitForFontReady(page: any) {
-    if (!this.fontName) return
+  private async waitForFontReady(page: any, font: ResolvedTextFont) {
+    if (!font.family) return
     try {
       await page.evaluate(async (fontName: string) => {
         if (!('fonts' in document)) return
-        await document.fonts.load(`16px "${fontName}"`)
+        await document.fonts.load(`16px "${fontName}"`, '\u8bfe\u8868\u5b57\u4f53\u6d4b\u8bd5 ABC 123')
         await document.fonts.ready
-      }, this.fontName)
-      this.ctx.logger.info(`[course-schedule] 字体已完成加载并可用于渲染: ${this.fontName}`)
+      }, font.family)
+      this.ctx.logger.info(`[course-schedule] 字体已完成加载并可用于渲染: ${font.family}`)
     } catch (e: any) {
       this.ctx.logger.warn('[course-schedule] 等待字体渲染就绪失败，继续使用当前页面状态截图:', e.message)
     }
   }
 
-  private async renderHtml(html: string, label: string) {
+  private async renderHtml(html: string, label: string, font: ResolvedTextFont) {
     if (!this.ctx.puppeteer) {
       this.log('[render]', label, '- puppeteer 不可用')
       return null
@@ -140,8 +124,8 @@ export class ImageGenerator {
       this.log('[render]', label, '- 页面已创建')
       await page.setContent(html, { waitUntil: this.waitUntil, timeout: 30000 })
       this.log('[render]', label, `- setContent 完成(waitUntil=${this.waitUntil})`)
-      await this.injectFont(page)
-      await this.waitForFontReady(page)
+      await this.injectFont(page, font)
+      await this.waitForFontReady(page, font)
       const el = await page.$('body')
       if (!el) {
         this.log('[render]', label, '- body 元素未找到')

@@ -95,7 +95,7 @@
 
 基于 **Puppeteer** 将 HTML 模板渲染为图片输出，配置项：
 - **waitUntil 策略** —— 控制渲染等待时机（load / domcontentloaded / networkidle0 / networkidle2）
-- **自定义字体** —— 支持指定系统字体文件路径
+- **字体模式** —— 默认使用 npm 的 LXGW 文楷等宽字体，也可选择 Gitee / GitHub Release 下载、本地字体路径或系统默认字体
 - **自定义颜色** —— 主题色、卡片背景色、状态标签色均可配置
 
 ### 📅 节假日支持
@@ -139,7 +139,8 @@ yarn add koishi-plugin-course-schedule
 | `rankingCommand` | `排行` | 查看本周排行命令名 |
 | `weekCommand` | `周课表` | 查看周课表命令名 |
 | `renderWaitUntil` | `load` | Puppeteer 渲染等待策略 |
-| `textFontPath` | `(空)` | 自定义字体文件路径 |
+| `textFontMode` | `npm` | 字体模式：`npm`（默认）/ `release` / `custom` / `none` |
+| `textFontPath` | `(空)` | 本地字体文件绝对路径，仅在 `textFontMode` 为 `custom` 时生效 |
 | `renderFooterText` | (默认底部文字) | 📝 图片底部文字（支持换行，留空则不显示） |
 | `scheduleFileTempDir` | `cache/files` | 课表文件临时目录（绝对路径） |
 | `scheduleFileTempDeleteTime` | `300` | 临时课表文件删除时间（秒），`0`或`负数`表示永不删除 |

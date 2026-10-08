@@ -9,7 +9,7 @@ import { HolidayService } from './holiday'
 export function createCourseScheduleServices(ctx: Context, config: Config) {
   const dataManager = new DataManager(ctx)
   const icsParser = new ICSParser()
-  const imageGenerator = new ImageGenerator(ctx, config.textFontPath, config.renderWaitUntil, config.verboseConsoleLog, config.renderColors, config.renderFooterText, config.nameDisplayStyle)
+  const imageGenerator = new ImageGenerator(ctx, config.textFontMode, config.textFontPath, config.renderWaitUntil, config.verboseConsoleLog, config.renderColors, config.renderFooterText, config.nameDisplayStyle)
   const logFn = (...args: unknown[]) => {
     if (config.verboseConsoleLog) ctx.logger.info('[course-schedule]', ...args)
   }
