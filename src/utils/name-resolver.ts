@@ -5,12 +5,11 @@ import { TABLE_NAME } from '../constants'
 export async function buildNameMap(
   session: any,
   ctx: Context,
-  channelId: string,
   log: (...args: unknown[]) => void,
 ): Promise<NameMap> {
   const nameMap: NameMap = new Map()
   try {
-    const courses = await (ctx.database.get(TABLE_NAME, { channelId }) as Promise<{ userid: string; username: string; nickname?: string }[]>)
+    const courses = await (ctx.database.get(TABLE_NAME, {}) as Promise<{ userid: string; username: string; nickname?: string }[]>)
     const uniqueUserIds = [...new Set(courses.map(c => c.userid))]
     for (const uid of uniqueUserIds) {
       try {
@@ -26,7 +25,7 @@ export async function buildNameMap(
       }
     }
   } catch {
-    log('[name-resolver] 无法获取课程列表, channelId=', channelId)
+    log('[name-resolver] 无法获取课程列表')
   }
   return nameMap
 }

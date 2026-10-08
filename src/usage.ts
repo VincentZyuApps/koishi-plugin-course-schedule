@@ -61,8 +61,8 @@ export const usage = `
   <tr><td><code>课表.绑定 &lt;文本&gt;</code></td><td>导入课表数据（建议使用文本：分享码/JSON，交互式传文件可能有问题）</td><td><code>课表.绑定 分享口令为「xxxxxxxx」</code></td></tr>
   <tr><td><code>课表.设置星链时间表</code></td><td>设置星链课表时间表</td><td><code>课表.设置星链时间表</code></td></tr>
   <tr><td><code>课表.查看 [天]</code></td><td>查看个人某天课程</td><td><code>课表.查看 明天</code></td></tr>
-  <tr><td><code>课表.群课表 [天]</code></td><td>查看本群所有人某天的课程</td><td><code>课表.群课表 周三</code></td></tr>
-  <tr><td><code>课表.排行</code></td><td>查看本周本群上课时长排行榜</td><td><code>课表.排行</code></td></tr>
+  <tr><td><code>课表.群课表 [天]</code></td><td>查看所有已导入用户某天的课程</td><td><code>课表.群课表 周三</code></td></tr>
+  <tr><td><code>课表.排行</code></td><td>查看本周上课时长排行榜</td><td><code>课表.排行</code></td></tr>
   <tr><td><code>课表.周课表 [周数]</code></td><td>查看个人周课表纵览</td><td><code>课表.周课表 12</code></td></tr>
 </table>
 

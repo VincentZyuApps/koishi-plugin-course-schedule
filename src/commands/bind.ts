@@ -98,9 +98,8 @@ export function registerBindCommand(
         return `${doQuote}❌ 没有解析出可导入课程。📋 请检查格式是否正确。`
       }
 
-      services.log('[bind] 开始写入数据库, 频道=', session.channelId, '用户=', session.userId)
+      services.log('[bind] 开始写入数据库(全局), 用户=', session.userId, '来源频道=', session.channelId)
       const removed = await ctx.database.remove('course_schedule', {
-        channelId: session.channelId,
         userid: session.userId,
       })
       services.log('[bind] 清除旧数据, 受影响行数=', typeof removed === 'number' ? removed : 'unknown')

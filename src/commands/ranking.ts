@@ -5,7 +5,7 @@ import type { CourseScheduleServices } from '../services'
 import { buildNameMap } from '../utils/name-resolver'
 
 export function registerRankingCommand(ctx: Context, config: Config, services: CourseScheduleServices) {
-  ctx.command(`${config.baseCommand}.${config.rankingCommand}`, `📊 查看本周本群上课排行榜`)
+  ctx.command(`${config.baseCommand}.${config.rankingCommand}`, `📊 查看本周上课排行榜`)
     .action(async ({ session }) => {
       const doQuote = config.enableQuote ? h.quote(session.messageId) : ''
       services.log('[ranking] 频道=', session.channelId)
@@ -14,8 +14,8 @@ export function registerRankingCommand(ctx: Context, config: Config, services: C
         ? (await session.send(`${doQuote}📊 正在渲染排行榜，请稍候... ⏳`))[0]
         : null
 
-      const nameMap = await buildNameMap(session, ctx, session.channelId, services.log)
-      const img = await services.scheduleService.renderWeeklyRanking(session.channelId, nameMap)
+      const nameMap = await buildNameMap(session, ctx, services.log)
+      const img = await services.scheduleService.renderWeeklyRanking(nameMap)
       services.log('[ranking] 渲染结果:', img ? '成功' : '无数据')
 
       waitingHintMsgId && session.bot.deleteMessage(session.channelId, waitingHintMsgId).catch(() => {})

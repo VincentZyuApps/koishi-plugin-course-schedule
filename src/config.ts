@@ -80,7 +80,7 @@ export const Config: Schema<Config> = Schema.intersect([
     bindCommand: Schema.string().default('绑定').description('📥 绑定课表命令名'),
     timetableCommand: Schema.string().default('设置星链时间表').description('⏰ 设置星链时间表命令名'),
     showCommand: Schema.string().default('查看').description('👁️ 查看个人课表命令名'),
-    groupCommand: Schema.string().default('群课表').description('👥 查看群友课表命令名'),
+    groupCommand: Schema.string().default('群课表').description('👥 查看所有已导入用户课表命令名'),
     rankingCommand: Schema.string().default('排行').description('🏆 查看本周排行命令名'),
     weekCommand: Schema.string().default('周课表').description('📅 查看周课表命令名'),
   }).description('⚙️ 指令设置'),

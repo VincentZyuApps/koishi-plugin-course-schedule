@@ -17,7 +17,7 @@ export function registerShowCommand(ctx: Context, config: Config, services: Cour
         : null
 
       const nameMap = await buildSingleNameMap(session, session.userId, services.log)
-      const img = await services.scheduleService.renderPersonalSchedule(session.channelId, session.userId, dayOffset, nameMap)
+      const img = await services.scheduleService.renderPersonalSchedule(session.userId, dayOffset, nameMap)
       services.log('[show] 渲染结果:', img ? '成功' : '无数据')
 
       waitingHintMsgId && session.bot.deleteMessage(session.channelId, waitingHintMsgId).catch(() => {})

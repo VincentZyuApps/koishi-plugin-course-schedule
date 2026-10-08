@@ -31,22 +31,46 @@ export class ScheduleService {
     this.ctx.logger.info('[course-schedule]', ...args)
   }
 
-  async listChannelCourses(channelId: string) {
-    const courses = await (this.ctx.database.get(TABLE_NAME, { channelId }) as Promise<CourseRecord[]>)
-    this.log('[schedule] listChannelCourses, channel=', channelId, 'count=', courses.length)
-    return courses
+  // 全局查询：不按频道过滤，身份键只有 userid
+  async listAllCourses() {
+    const courses = await (this.ctx.database.get(TABLE_NAME, {}) as Promise<CourseRecord[]>)
+    const deduped = this.dedupeCourses(courses)
+    this.log('[schedule] listAllCourses, count=', deduped.length, '(raw=', courses.length, ')')
+    return deduped
   }
 
-  async listUserCourses(channelId: string, userid: string) {
-    const courses = await (this.ctx.database.get(TABLE_NAME, { channelId, userid }) as Promise<CourseRecord[]>)
-    this.log('[schedule] listUserCourses, channel=', channelId, 'user=', userid, 'count=', courses.length)
-    return courses
+  async listUserCourses(userid: string) {
+    const courses = await (this.ctx.database.get(TABLE_NAME, { userid }) as Promise<CourseRecord[]>)
+    const deduped = this.dedupeCourses(courses)
+    this.log('[schedule] listUserCourses, user=', userid, 'count=', deduped.length, '(raw=', courses.length, ')')
+    return deduped
   }
 
-  async renderPersonalSchedule(channelId: string, userid: string, dayOffset = 0, nameMap?: NameMap) {
+  // 旧版本按频道存过多份相同课程，这里按课程签名去重，避免个人课表/排行重复
+  private dedupeCourses(courses: CourseRecord[]): CourseRecord[] {
+    const seen = new Set<string>()
+    const result: CourseRecord[] = []
+    for (const course of courses) {
+      const key = [
+        course.userid,
+        course.curriculumname,
+        (course.curriculumndate ?? []).join(''),
+        course.curriculumtime,
+        course.startDate,
+        course.endDate,
+        course.location ?? '',
+      ].join('|')
+      if (seen.has(key)) continue
+      seen.add(key)
+      result.push(course)
+    }
+    return result
+  }
+
+  async renderPersonalSchedule(userid: string, dayOffset = 0, nameMap?: NameMap) {
     const targetDate = getDayOffsetDate(dayOffset)
     const currentWeekday = weekdayNameOfDate(targetDate)
-    const allCourses = await this.listUserCourses(channelId, userid)
+    const allCourses = await this.listUserCourses(userid)
     const semesterStart = this.getSemesterStart(allCourses)
 
     const holidayInfo = await this.holidayService.getHolidayInfoForDate(targetDate)
@@ -68,10 +92,10 @@ export class ScheduleService {
     return this.imageGenerator.renderPersonalSchedule(items, targetDate)
   }
 
-  async renderChannelSchedule(channelId: string, dayOffset = 0, nameMap?: NameMap) {
+  async renderGroupSchedule(dayOffset = 0, nameMap?: NameMap) {
     const targetDate = getDayOffsetDate(dayOffset)
     const weekday = weekdayNameOfDate(targetDate)
-    const courses = await this.listChannelCourses(channelId)
+    const courses = await this.listAllCourses()
     const semesterStart = this.getSemesterStart(courses)
 
     this.log('[group] === 群课表渲染开始 ===')
@@ -172,8 +196,8 @@ export class ScheduleService {
     return this.imageGenerator.renderGroupSchedule(items, targetDate)
   }
 
-  async getWeeklyRanking(channelId: string, nameMap?: NameMap) {
-    const courses = await this.listChannelCourses(channelId)
+  async getWeeklyRanking(nameMap?: NameMap) {
+    const courses = await this.listAllCourses()
     const semesterStart = this.getSemesterStart(courses)
     const week = getWeekRange(new Date())
     const ranking = new Map<string, RankingItem>()
@@ -205,16 +229,16 @@ export class ScheduleService {
     return Array.from(ranking.values()).sort((a, b) => b.totalMinutes - a.totalMinutes)
   }
 
-  async renderWeeklyRanking(channelId: string, nameMap?: NameMap) {
-    const ranking = await this.getWeeklyRanking(channelId, nameMap)
+  async renderWeeklyRanking(nameMap?: NameMap) {
+    const ranking = await this.getWeeklyRanking(nameMap)
     this.log('[schedule] renderWeeklyRanking, 参与人数=', ranking.length)
     const week = getWeekRange(new Date())
     const dateRange = `${week.days[0].date.toLocaleDateString('zh-CN')} - ${week.days[6].date.toLocaleDateString('zh-CN')}`
     return this.imageGenerator.renderRanking(ranking, dateRange)
   }
 
-  async renderWeeklySchedule(channelId: string, userid: string, weekNumber?: number, nameMap?: NameMap) {
-    const allCourses = await this.listUserCourses(channelId, userid)
+  async renderWeeklySchedule(userid: string, weekNumber?: number, nameMap?: NameMap) {
+    const allCourses = await this.listUserCourses(userid)
     if (!allCourses.length) return null
 
     const semesterStart = this.getSemesterStart(allCourses)

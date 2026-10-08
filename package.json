@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-course-schedule",
   "description": "📚📅 课程表插件，支持 WakeUp/星链/拾光 等课程表，ICS/JSON 等多格式导入，渲染为图片输出个人课表、群课表、周课表和排行榜 🎓🖼️✨",
-  "version": "0.2.6-beta.5+20260528",
+  "version": "0.2.7-beta.6+20261008",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

@@ -6,7 +6,7 @@ import { buildNameMap } from '../utils/name-resolver'
 import { parseDayOffset } from '../utils/date'
 
 export function registerGroupCommand(ctx: Context, config: Config, services: CourseScheduleServices) {
-  ctx.command(`${config.baseCommand}.${config.groupCommand} [day:text]`, `👥 获取本群所有群u某天的全部课程`)
+  ctx.command(`${config.baseCommand}.${config.groupCommand} [day:text]`, `👥 获取所有已导入用户某天的全部课程`)
     .action(async ({ session }, day) => {
       const dayOffset = parseDayOffset(day)
       const doQuote = config.enableQuote ? h.quote(session.messageId) : ''
@@ -16,8 +16,8 @@ export function registerGroupCommand(ctx: Context, config: Config, services: Cou
         ? (await session.send(`${doQuote}👥 正在渲染群课表，请稍候... ⏳`))[0]
         : null
 
-      const nameMap = await buildNameMap(session, ctx, session.channelId, services.log)
-      const img = await services.scheduleService.renderChannelSchedule(session.channelId, dayOffset, nameMap)
+      const nameMap = await buildNameMap(session, ctx, services.log)
+      const img = await services.scheduleService.renderGroupSchedule(dayOffset, nameMap)
       services.log('[group] 渲染结果:', img ? '成功' : '无数据')
 
       waitingHintMsgId && session.bot.deleteMessage(session.channelId, waitingHintMsgId).catch(() => {})

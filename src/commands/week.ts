@@ -35,7 +35,7 @@ export function registerWeekCommand(ctx: Context, config: Config, services: Cour
         : null
 
       const nameMap = await buildSingleNameMap(session, session.userId, services.log)
-      const img = await services.scheduleService.renderWeeklySchedule(session.channelId, session.userId, weekNumber, nameMap)
+      const img = await services.scheduleService.renderWeeklySchedule(session.userId, weekNumber, nameMap)
       services.log('[week] 渲染结果:', img ? '成功' : '无数据')
 
       waitingHintMsgId && session.bot.deleteMessage(session.channelId, waitingHintMsgId).catch(() => {})
