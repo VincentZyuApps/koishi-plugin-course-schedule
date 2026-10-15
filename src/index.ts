@@ -1,10 +1,11 @@
 import { Context } from 'koishi'
 import { createCourseScheduleServices } from './services'
 import { registerBindCommand } from './commands/bind'
+import { registerUnbindCommand } from './commands/unbind'
 import { registerTimetableCommand } from './commands/timetable'
 import { registerGroupCommand } from './commands/group'
 import { registerRankingCommand } from './commands/ranking'
-import { registerShowCommand } from './commands/show'
+import { registerTodayCommand } from './commands/today'
 import { registerWeekCommand } from './commands/week'
 import { IcsFileService } from './services/ics-file'
 import { IcsWatcher } from './services/ics-watcher'
@@ -29,11 +30,12 @@ export function apply(ctx: Context, config: Config) {
     await services.dataManager.ensureStorage()
     services.registerDatabase()
     registerBindCommand(ctx, config, services, icsFileService, icsWatcher, timeSlotManager)
+    registerUnbindCommand(ctx, config, services)
     registerTimetableCommand(ctx, config, services, timeSlotManager)
-    registerShowCommand(ctx, config, services)
+    registerTodayCommand(ctx, config, services)
+    registerWeekCommand(ctx, config, services)
     registerGroupCommand(ctx, config, services)
     registerRankingCommand(ctx, config, services)
-    registerWeekCommand(ctx, config, services)
   })
 
   ctx.on('dispose', () => {

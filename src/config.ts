@@ -40,11 +40,12 @@ export interface Config {
   // ⚙️ 指令设置
   baseCommand: string
   bindCommand: string
+  unbindCommand: string
   timetableCommand: string
-  showCommand: string
+  todayCommand: string
+  weekCommand: string
   groupCommand: string
   rankingCommand: string
-  weekCommand: string
 
   // 📅 学期设置
   defaultSemesterStart: string
@@ -88,11 +89,12 @@ export const Config: Schema<Config> = Schema.intersect([
     baseCommand: Schema.string().default('课表').description('📋 父级指令名称'),
     __split__: Schema.string().disabled().default('上面是父级指令，下面是字指令').description('_____————上面是父级指令，下面是字指令————_____'),
     bindCommand: Schema.string().default('绑定').description('📥 绑定课表命令名'),
+    unbindCommand: Schema.string().default('解绑').description('🗑️ 解绑个人课表命令名'),
     timetableCommand: Schema.string().default('设置星链时间表').description('⏰ 设置星链时间表命令名'),
-    showCommand: Schema.string().default('查看当日').description('📋 查看个人某天课程命令名'),
+    todayCommand: Schema.string().default('查看当日').description('📋 查看个人某天课程命令名'),
+    weekCommand: Schema.string().default('查看本周').description('📅 查看个人周课表纵览命令名'),
     groupCommand: Schema.string().default('查看本群').description('👥 查看本群群友某天课程命令名'),
     rankingCommand: Schema.string().default('本群周排行').description('🏆 查看本群本周上课排行命令名'),
-    weekCommand: Schema.string().default('查看本周').description('📅 查看个人周课表纵览命令名'),
   }).description('⚙️ 指令设置'),
 
   // 📅 学期设置

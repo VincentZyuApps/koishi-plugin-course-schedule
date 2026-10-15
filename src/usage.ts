@@ -14,15 +14,27 @@ export const usage = `
   <a href="https://www.npmjs.com/package/koishi-plugin-course-schedule" target="_blank">
     <img src="https://img.shields.io/npm/v/koishi-plugin-course-schedule?style=flat-square" alt="npm version">
   </a>
+  <a href="https://www.npmjs.com/package/koishi-plugin-course-schedule" target="_blank">
+    <img src="https://img.shields.io/npm/dm/koishi-plugin-course-schedule?style=flat-square" alt="npm download">
+  </a>
+</p>
+
+<p>
   <a href="https://github.com/VincentZyu233/koishi-plugin-course-schedule" target="_blank">
     <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
   </a>
   <a href="https://gitee.com/vincent-zyu/koishi-plugin-course-schedule" target="_blank">
     <img src="https://img.shields.io/badge/Gitee-C71D23?style=for-the-badge&logo=gitee&logoColor=white" alt="Gitee">
   </a>
+</p>
+
+<p>
   <a href="https://forum.koishi.xyz/t/topic/12565" target="_blank">
     <img src="https://img.shields.io/badge/Koishi%20Forum-12565-5546A3?style=for-the-badge&logo=${KOISHI_LOGO_BASE64}&logoColor=white" alt="Koishi Forum">
   </a>
+</p>
+
+<p>
   <a href="https://qm.qq.com/q/ZN7fxZ3qCq" target="_blank">
     <img src="https://img.shields.io/badge/QQ群-1085190201-12B7F5?style=flat-square&logo=qq&logoColor=white" alt="QQ群">
   </a>
@@ -47,12 +59,13 @@ export const usage = `
 <h3>📋 命令速查表</h3>
 <table>
   <tr><th>命令</th><th>说明</th><th>调用示例</th></tr>
-  <tr><td><code>课表.查看当日 [天]</code></td><td>查看个人某天课程（支持今天、明天、周几等）</td><td><code>课表.查看当日 明天</code></td></tr>
-  <tr><td><code>课表.查看本周 [周数]</code></td><td>查看个人完整周课表视图（默认当前周）</td><td><code>课表.查看本周 12</code></td></tr>
+  <tr><td><code>课表.绑定 [文本]</code></td><td>导入课表数据（优先建议直接发分享码/JSON 文本，亦支持文件交互）</td><td><code>课表.绑定 分享口令为「xxxxxxxx」</code></td></tr>
+  <tr><td><code>课表.解绑</code></td><td>清空当前发送者的个人课表数据，方便重新测试导入</td><td><code>课表.解绑</code></td></tr>
+  <tr><td><code>课表.设置星链时间表 [文本]</code></td><td>设置星链时间表并自动刷新已有课程时间</td><td><code>课表.设置星链时间表</code></td></tr>
+  <tr><td><code>课表.查看当日 [@用户/ID] [-o 偏移]</code></td><td>查看某人某天课程（默认自己今天；-o 支持明天、周几、数字偏移）</td><td><code>课表.查看当日 @群友 -o 明天</code></td></tr>
+  <tr><td><code>课表.查看本周 [@用户/ID] [-o 周数]</code></td><td>查看某人完整周课表视图（默认自己当前周；-o 支持指定周数）</td><td><code>课表.查看本周 @群友 -o 12</code></td></tr>
   <tr><td><code>课表.查看本群 [天]</code></td><td>查看本群群友某天的全部课程横向汇总</td><td><code>课表.查看本群 周三</code></td></tr>
   <tr><td><code>课表.本群周排行</code></td><td>统计本群成员本周上课总时长排行榜</td><td><code>课表.本群周排行</code></td></tr>
-  <tr><td><code>课表.绑定 [文本]</code></td><td>导入课表数据（优先建议直接发分享码/JSON 文本，亦支持文件交互）</td><td><code>课表.绑定 分享口令为「xxxxxxxx」</code></td></tr>
-  <tr><td><code>课表.设置星链时间表 [文本]</code></td><td>设置星链时间表并自动刷新已有课程时间</td><td><code>课表.设置星链时间表</code></td></tr>
 </table>
 <p>💡 <b>提示</b>：命令前缀 <code>课表</code> 及各子指令名称均可在配置项中自定义修改。</p>
 </div>

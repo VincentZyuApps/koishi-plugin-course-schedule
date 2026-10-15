@@ -82,3 +82,18 @@ export async function buildSingleNameMap(
   return nameMap
 }
 
+export function extractTargetUserId(targetUserText: string | undefined, fallbackUserId: string): string {
+  if (!targetUserText) return fallbackUserId
+
+  const trimmed = targetUserText.trim()
+  // 1. 匹配标准 Koishi at 格式: <at id="123456"/> 或 <at id="123456" name="..."/>
+  const atMatch = trimmed.match(/<at id="([^"]+)"/)
+  if (atMatch) return atMatch[1]
+
+  // 2. 匹配纯数字/字母 ID 或带有 @ 的纯文本 (@123456)
+  const plainMatch = trimmed.replace(/^@/, '').trim()
+  if (plainMatch) return plainMatch
+
+  return fallbackUserId
+}
+
