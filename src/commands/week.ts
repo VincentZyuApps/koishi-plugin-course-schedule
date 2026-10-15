@@ -2,10 +2,10 @@ import { h } from 'koishi'
 import type { Context } from 'koishi'
 import type { Config } from '../config'
 import type { CourseScheduleServices } from '../services'
-import { buildSingleNameMap } from '../utils/name-resolver'
+import { buildSingleNameMap } from '../utils/name'
 
 export function registerWeekCommand(ctx: Context, config: Config, services: CourseScheduleServices) {
-  ctx.command(`${config.baseCommand}.${config.weekCommand} [week:text]`, `📅 获取某人某个周的全部课程`)
+  ctx.command(`${config.baseCommand}.${config.weekCommand} [week:text]`, `📅 查看个人周课表纵览`)
     .action(async ({ session }, week) => {
       let weekNumber: number | undefined
       if (week) {

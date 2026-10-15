@@ -1,10 +1,11 @@
 import type { Context } from 'koishi'
 import { TABLE_NAME } from '../constants'
 import type { CourseRecord, DayCourseView, RankingItem, WeeklyDayView, WeeklyCourseView } from '../types'
-import type { DataManager } from './data-manager'
-import type { ICSParser } from './ics-parser'
+import type { DataManager } from './database-model'
+import type { ICSParser } from './parser/ics-parser'
 import type { ImageGenerator } from '../render/image-generator'
-import type { HolidayService } from './holiday'
+import type { HolidayService } from './holiday-info'
+import { normalizeSemesterStartDate } from '../config'
 import {
   formatDurationMinutes,
   getDayOffsetDate,
@@ -25,6 +26,7 @@ export class ScheduleService {
     private _icsParser: ICSParser,
     private imageGenerator: ImageGenerator,
     private holidayService: HolidayService,
+    private defaultSemesterStart = '2026-09-07',
   ) {}
 
   private log(...args: unknown[]) {
@@ -71,7 +73,7 @@ export class ScheduleService {
     const targetDate = getDayOffsetDate(dayOffset)
     const currentWeekday = weekdayNameOfDate(targetDate)
     const allCourses = await this.listUserCourses(userid)
-    const semesterStart = this.getSemesterStart(allCourses)
+    const semesterStart = this.getUserSemesterStart(allCourses)
 
     const holidayInfo = await this.holidayService.getHolidayInfoForDate(targetDate)
     if (holidayInfo?.isHoliday) {
@@ -95,21 +97,41 @@ export class ScheduleService {
   async renderGroupSchedule(dayOffset = 0, nameMap?: NameMap) {
     const targetDate = getDayOffsetDate(dayOffset)
     const weekday = weekdayNameOfDate(targetDate)
-    const courses = await this.listAllCourses()
-    const semesterStart = this.getSemesterStart(courses)
+    const allCourses = await this.listAllCourses()
 
     this.log('[group] === 群课表渲染开始 ===')
     this.log('[group] 目标日期:', toIsoDate(targetDate), `(${weekday})`, 'dayOffset=', dayOffset)
 
+    // 课表数据仅与 userid 绑定，群课表仅展示本群成员（nameMap 中包含的用户）
+    const courses = allCourses.filter(c => {
+      if (!nameMap) return true
+      return nameMap.has(c.userid)
+    })
+
     for (let i = 0; i < courses.length; i++) {
       const c = courses[i]
-      this.log(`[group]   DB课程${i + 1}: ${c.curriculumname} | ${c.curriculumndate.join(',')} | ${c.startDate} ~ ${c.endDate} | ${c.curriculumtime} | 用户=${c.userid}`)
+      this.log(`[group]   候选课程${i + 1}: ${c.curriculumname} | ${c.curriculumndate.join(',')} | ${c.startDate} ~ ${c.endDate} | ${c.curriculumtime} | 用户=${c.userid}`)
+    }
+
+    // 先按用户归类课程
+    const userCoursesMap = new Map<string, CourseRecord[]>()
+    for (const c of courses) {
+      const list = userCoursesMap.get(c.userid) ?? []
+      list.push(c)
+      userCoursesMap.set(c.userid, list)
     }
 
     const holidayInfo = await this.holidayService.getHolidayInfoForDate(targetDate)
     if (holidayInfo?.isHoliday) {
-      const rescheduled = courses.filter(c => isCourseActiveOnDate(c, targetDate, weekday, semesterStart))
-      if (!rescheduled.length) {
+      let anyRescheduled = false
+      for (const [_, uCourses] of userCoursesMap) {
+        const uSemStart = this.getUserSemesterStart(uCourses)
+        if (uCourses.some(c => isCourseActiveOnDate(c, targetDate, weekday, uSemStart))) {
+          anyRescheduled = true
+          break
+        }
+      }
+      if (!anyRescheduled) {
         return `今天是 ${holidayInfo.name}，群友们都在休息！🎉`
       }
     } else if (holidayInfo?.isWorkdayOnWeekend) {
@@ -120,24 +142,30 @@ export class ScheduleService {
     let passedCount = 0
     let filteredCount = 0
 
-    for (const course of courses) {
-      if (!isCourseActiveOnDate(course, targetDate, weekday, semesterStart)) {
-        filteredCount++
-        const reasons: string[] = []
-        if (!course.curriculumndate.includes(weekday)) reasons.push('星期不匹配')
-        if (toIsoDate(targetDate) < course.startDate) reasons.push('日期早于startDate')
-        if (toIsoDate(targetDate) > course.endDate) reasons.push('日期晚于endDate')
-        if (course.weeks?.length) {
-          const weekNum = getWeekNumberFromDate(semesterStart, targetDate)
-          if (!course.weeks.includes(weekNum)) reasons.push(`周数${weekNum}不在weeks数组中`)
+    // 关键修复：每个用户独立计算各自的 semesterStart，彻底消除全局污染
+    for (const [userid, userCourses] of userCoursesMap) {
+      const userSemesterStart = this.getUserSemesterStart(userCourses)
+      this.log(`[group] 用户 ${userid} 的独立开学日期: ${userSemesterStart}`)
+
+      for (const course of userCourses) {
+        if (!isCourseActiveOnDate(course, targetDate, weekday, userSemesterStart)) {
+          filteredCount++
+          const reasons: string[] = []
+          if (!course.curriculumndate.includes(weekday)) reasons.push('星期不匹配')
+          if (toIsoDate(targetDate) < course.startDate) reasons.push('日期早于startDate')
+          if (toIsoDate(targetDate) > course.endDate) reasons.push('日期晚于endDate')
+          if (course.weeks?.length) {
+            const weekNum = getWeekNumberFromDate(userSemesterStart, targetDate)
+            if (!course.weeks.includes(weekNum)) reasons.push(`周数${weekNum}不在weeks数组中`)
+          }
+          this.log(`[group]   过滤掉: ${course.curriculumname} (原因: ${reasons.join(', ')})`)
+          continue
         }
-        this.log(`[group]   过滤掉: ${course.curriculumname} (原因: ${reasons.join(', ')})`)
-        continue
+        passedCount++
+        const bucket = byUser.get(course.userid) ?? []
+        bucket.push(course)
+        byUser.set(course.userid, bucket)
       }
-      passedCount++
-      const bucket = byUser.get(course.userid) ?? []
-      bucket.push(course)
-      byUser.set(course.userid, bucket)
     }
 
     this.log('[group] 过滤结果: 通过=', passedCount, '未通过=', filteredCount, '独立用户=', byUser.size)
@@ -197,32 +225,48 @@ export class ScheduleService {
   }
 
   async getWeeklyRanking(nameMap?: NameMap) {
-    const courses = await this.listAllCourses()
-    const semesterStart = this.getSemesterStart(courses)
+    const allCourses = await this.listAllCourses()
+    // 课表数据仅与 userid 绑定，排行榜仅统计本群成员（nameMap 中包含的用户）
+    const courses = allCourses.filter(c => {
+      if (!nameMap) return true
+      return nameMap.has(c.userid)
+    })
+
+    const userCoursesMap = new Map<string, CourseRecord[]>()
+    for (const c of courses) {
+      const list = userCoursesMap.get(c.userid) ?? []
+      list.push(c)
+      userCoursesMap.set(c.userid, list)
+    }
+
     const week = getWeekRange(new Date())
     const ranking = new Map<string, RankingItem>()
 
-    for (const course of courses) {
-      const weekdays = course.curriculumndate ?? []
-      const [startTime, endTime] = course.curriculumtime.split('-')
-      const duration = this.diffMinutes(startTime, endTime)
-      if (duration <= 0) continue
+    for (const [userid, userCourses] of userCoursesMap) {
+      const userSemesterStart = this.getUserSemesterStart(userCourses)
 
-      for (const day of week.days) {
-        if (!isCourseActiveOnDate(course, day.date, day.weekday, semesterStart)) continue
-        if (!weekdays.includes(day.weekday)) continue
-        const nameInfo = nameMap?.get(course.userid) ?? { username: course.username, nickname: course.nickname ?? '' }
-        const item = ranking.get(course.userid) ?? {
-          userid: course.userid,
-          username: nameInfo.username,
-          nickname: nameInfo.nickname,
-          useravatar: course.useravatar,
-          totalMinutes: 0,
-          courseCount: 0,
+      for (const course of userCourses) {
+        const weekdays = course.curriculumndate ?? []
+        const [startTime, endTime] = course.curriculumtime.split('-')
+        const duration = this.diffMinutes(startTime, endTime)
+        if (duration <= 0) continue
+
+        for (const day of week.days) {
+          if (!isCourseActiveOnDate(course, day.date, day.weekday, userSemesterStart)) continue
+          if (!weekdays.includes(day.weekday)) continue
+          const nameInfo = nameMap?.get(course.userid) ?? { username: course.username, nickname: course.nickname ?? '' }
+          const item = ranking.get(course.userid) ?? {
+            userid: course.userid,
+            username: nameInfo.username,
+            nickname: nameInfo.nickname,
+            useravatar: course.useravatar,
+            totalMinutes: 0,
+            courseCount: 0,
+          }
+          item.totalMinutes += duration
+          item.courseCount += 1
+          ranking.set(course.userid, item)
         }
-        item.totalMinutes += duration
-        item.courseCount += 1
-        ranking.set(course.userid, item)
       }
     }
 
@@ -241,7 +285,7 @@ export class ScheduleService {
     const allCourses = await this.listUserCourses(userid)
     if (!allCourses.length) return null
 
-    const semesterStart = this.getSemesterStart(allCourses)
+    const semesterStart = this.getUserSemesterStart(allCourses)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const currentWeek = getWeekNumberFromDate(semesterStart, today)
@@ -304,12 +348,30 @@ export class ScheduleService {
     return this.imageGenerator.renderWeeklySchedule(username, nickname, week, dateRange, days)
   }
 
-  private getSemesterStart(courses: CourseRecord[]): string {
-    let earliest = courses[0]?.startDate ?? toIsoDate(new Date())
+  private getUserSemesterStart(courses: CourseRecord[]): string {
+    const fallbackDate = normalizeSemesterStartDate(this.defaultSemesterStart)
+    if (!courses.length) return fallbackDate
+
+    let earliest = courses[0]?.startDate
     for (const c of courses) {
-      if (c.startDate < earliest) earliest = c.startDate
+      if (c.startDate && (!earliest || c.startDate < earliest)) {
+        earliest = c.startDate
+      }
     }
+    if (!earliest) return fallbackDate
+
+    // 若最早日期与当前时间偏离过远（超过210天，说明是跨学期历史旧课表），回退到配置项开学日期
+    const diffDays = Math.abs((new Date().getTime() - new Date(earliest).getTime()) / (1000 * 60 * 60 * 24))
+    if (diffDays > 210) {
+      this.log(`[schedule] 用户课表 startDate=${earliest} 偏离当前日期过远(${Math.round(diffDays)}天)，回退使用默认开学日: ${fallbackDate}`)
+      return fallbackDate
+    }
+
     return earliest
+  }
+
+  private getSemesterStart(courses: CourseRecord[]): string {
+    return this.getUserSemesterStart(courses)
   }
 
   private pickRepresentativeCourse(courses: CourseRecord[], dayOffset: number) {

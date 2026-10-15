@@ -1,6 +1,6 @@
 import type { Context } from 'koishi'
-import type { CourseRecord, TargetUser } from '../types'
-import { toIsoDate } from '../utils/date'
+import type { CourseRecord, TargetUser } from '../../types'
+import { toIsoDate } from '../../utils/date'
 
 interface StarlinkTimeSlot {
   number: number
@@ -60,6 +60,8 @@ const DEFAULT_TIME_SLOTS: StarlinkTimeSlot[] = [
 ]
 
 export class StarlinkParser {
+  constructor(private defaultSemesterStart = '2026-09-07') {}
+
   async fetchAndParse(
     ctx: Context,
     shareCode: string,
@@ -228,11 +230,7 @@ export class StarlinkParser {
   }
 
   private defaultStartDate(): string {
-    const now = new Date()
-    const dayOfWeek = now.getDay()
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-    now.setDate(now.getDate() + mondayOffset)
-    return toIsoDate(now)
+    return this.defaultSemesterStart || '2026-09-07'
   }
 
   private timeToMinutes(time: string): number {

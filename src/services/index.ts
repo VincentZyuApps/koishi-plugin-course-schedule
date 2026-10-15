@@ -1,10 +1,10 @@
 import type { Context } from 'koishi'
 import type { Config } from '../config'
-import { DataManager } from './data-manager'
-import { ICSParser } from './ics-parser'
+import { DataManager } from './database-model'
+import { ICSParser } from './parser/ics-parser'
 import { ScheduleService } from './schedule-service'
 import { ImageGenerator } from '../render/image-generator'
-import { HolidayService } from './holiday'
+import { HolidayService } from './holiday-info'
 
 export function createCourseScheduleServices(ctx: Context, config: Config) {
   const dataManager = new DataManager(ctx)
@@ -14,7 +14,7 @@ export function createCourseScheduleServices(ctx: Context, config: Config) {
     if (config.verboseConsoleLog) ctx.logger.info('[course-schedule]', ...args)
   }
   const holidayService = new HolidayService(ctx, config.holidayCacheDir, logFn)
-  const scheduleService = new ScheduleService(ctx, dataManager, icsParser, imageGenerator, holidayService)
+  const scheduleService = new ScheduleService(ctx, dataManager, icsParser, imageGenerator, holidayService, config.defaultSemesterStart)
 
   return {
     dataManager,

@@ -1,6 +1,6 @@
-import { DEFAULT_ICS_IMPORT_DAYS } from '../constants'
-import type { CourseRecord, TargetUser } from '../types'
-import { toIsoDate, weekdayCodeToName, weekdayNameOfDate } from '../utils/date'
+import { DEFAULT_ICS_IMPORT_DAYS } from '../../constants'
+import type { CourseRecord, TargetUser } from '../../types'
+import { toIsoDate, weekdayCodeToName, weekdayNameOfDate } from '../../utils/date'
 
 interface WakeupTimeSlot {
   node: number

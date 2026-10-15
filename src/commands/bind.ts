@@ -4,14 +4,32 @@ import type { CourseScheduleServices } from '../services'
 import type { TargetUser } from '../types'
 import { IcsFileService } from '../services/ics-file'
 import { IcsWatcher } from '../services/ics-watcher'
-import { StarlinkParser } from '../services/starlink-parser'
-import { JsonParser } from '../services/json-parser'
-import { WakeupFileParser } from '../services/wakeup-file-parser'
+import { StarlinkParser } from '../services/parser/starlink-parser'
+import { ShiguangNativeParser, JsonParser } from '../services/parser/shiguang-native-parser'
+import { WakeupFileParser } from '../services/parser/wakeup-file-parser'
 import { TimeSlotManager } from '../services/timeslot-manager'
 
-const starlinkParser = new StarlinkParser()
-const jsonParser = new JsonParser()
-const wakeupFileParser = new WakeupFileParser()
+function isTimetableJson(text: string): boolean {
+  try {
+    const parsed = JSON.parse(text)
+    if (!parsed || typeof parsed !== 'object') return false
+    if (parsed.courses) return false
+    if (Array.isArray(parsed.items) && parsed.items.length > 0) {
+      return parsed.items.some((item: any) => item && (item.startHour !== undefined || item.section !== undefined || item.node !== undefined))
+    }
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.some((item: any) => item && (item.startHour !== undefined || item.section !== undefined || item.node !== undefined))
+    }
+  } catch {}
+  return false
+}
+
+const DEFAULT_EMPTY_ERROR = `❌ 没有解析出可导入课程。📋 请检查格式是否正确。
+
+💡 提示：若您使用的是「WakeUp 课程表」，极大概率是 App 版本过高（≥ 6.1.x，如 6.5.x 等）导致分享口令无法解析。
+🛠️ 请尝试降级安装 6.0.23 稳定版后重新生成口令分享导入：
+📥 官方稳定版 APK 下载（GitHub）：
+https://github.com/VincentZyuApps/koishi-plugin-course-schedule/releases/download/WakeUp6.0.23/WakeUp_6.0.23.apk`
 
 export function registerBindCommand(
   ctx: Context, config: Config, services: CourseScheduleServices,
@@ -91,11 +109,20 @@ export function registerBindCommand(
         }
       }
 
-      const courses = await parseSourceText(sourceText, fileName, session.channelId, targetUser, services, ctx, timeSlotManager)
+      if (config.enableTimetableInBindHint && isTimetableJson(sourceText)) {
+        services.log('[bind] 检测到用户误传入星链作息时间表 JSON，触发拦截指引')
+        const doQuote = config.enableQuote ? h.quote(session.messageId) : ''
+        const hintText = config.timetableInBindHintText
+          .replace(/\{baseCommand\}/g, config.baseCommand)
+          .replace(/\{timetableCommand\}/g, config.timetableCommand)
+        return `${doQuote}${hintText}`
+      }
+
+      const { courses, errorMessage } = await parseSourceText(sourceText, fileName, session.channelId, targetUser, services, ctx, timeSlotManager, config)
       if (!courses.length) {
         services.log('[bind] 解析结果为空，无法导入')
         const doQuote = config.enableQuote ? h.quote(session.messageId) : ''
-        return `${doQuote}❌ 没有解析出可导入课程。📋 请检查格式是否正确。`
+        return `${doQuote}${errorMessage || DEFAULT_EMPTY_ERROR}`
       }
 
       services.log('[bind] 开始写入数据库(全局), 用户=', session.userId, '来源频道=', session.channelId)
@@ -109,7 +136,7 @@ export function registerBindCommand(
       }
       services.log('[bind] 写入完成, 共', courses.length, '门课程')
 
-      if (config.starlinkTimeHint && courses[0]?.source === 'starlink') {
+      if (config.enableStarlinkTimeHint && courses[0]?.source === 'starlink') {
         const quote = config.enableQuote ? h.quote(session.messageId) : ''
         const hintText = config.starlinkTimeHintText
           .replace(/\{baseCommand\}/g, config.baseCommand)
@@ -122,6 +149,11 @@ export function registerBindCommand(
     })
 }
 
+interface ParseResult {
+  courses: any[]
+  errorMessage?: string
+}
+
 async function parseSourceText(
   sourceText: string,
   fileName: string,
@@ -130,28 +162,55 @@ async function parseSourceText(
   services: CourseScheduleServices,
   ctx: Context,
   timeSlotManager: TimeSlotManager,
-): Promise<any[]> {
+  config: Config,
+): Promise<ParseResult> {
   const trimmed = sourceText.trim()
+  const starlinkParser = new StarlinkParser(config.defaultSemesterStart)
+  const jsonParser = new JsonParser()
+  const wakeupFileParser = new WakeupFileParser()
 
   // 1. WakeUp 分享口令
   const shareKey = services.icsParser.parseWakeupShareKey(trimmed)
   if (shareKey) {
     services.log('[bind] 检测到 WakeUp 分享口令, key=', shareKey)
-    const response = await ctx.http.get(
-      `https://i.wakeup.fun/share_schedule/get?key=${shareKey}`,
-      {
-        headers: { 'User-Agent': 'okhttp/4.12.0' },
-        timeout: 15000,
-        responseType: 'json',
-      },
-    )
-    if (response?.status !== 1 || !response?.data) {
-      services.log('[bind] WakeUp API 返回异常:', response?.message)
-      return []
+    let response: any
+    try {
+      response = await ctx.http.get(
+        `https://i.wakeup.fun/share_schedule/get?key=${shareKey}`,
+        {
+          headers: { 'User-Agent': 'okhttp/4.12.0' },
+          timeout: 15000,
+          responseType: 'json',
+        },
+      )
+    } catch (e: any) {
+      services.log('[bind] WakeUp 请求异常:', e.message)
+      return {
+        courses: [],
+        errorMessage: `❌ 请求 WakeUp 接口超时或网络异常：${e.message}`,
+      }
     }
+
+    if (response?.status === 5000004 || response?.message?.includes('版本过低')) {
+      services.log('[bind] WakeUp API 返回版本过低拦截:', response?.message)
+      return {
+        courses: [],
+        errorMessage: '⚠️ WakeUp 分享口令导入失败！\n\n📌 服务端提示：「当前版本过低，请升级」\n\n💡 原因分析：\n您当前使用的 WakeUp 课程表 App 版本过高（≥ 6.1.x，如 6.5.x 等），该版本生成的分享口令已被官方限制，无法通过公开接口获取课表数据。\n\n🛠️ 解决方案：\n请降级安装旧版本 WakeUp（实测推荐 6.0.23），在该版本中重新生成口令分享即可成功导入。\n\n📥 官方稳定版 APK 下载：\nhttps://github.com/VincentZyuApps/koishi-plugin-course-schedule/releases/download/WakeUp6.0.23/WakeUp_6.0.23.apk',
+      }
+    }
+
+    if (response?.status !== 1 || !response?.data) {
+      const msg = response?.message || '未知错误'
+      services.log('[bind] WakeUp API 返回异常:', msg)
+      return {
+        courses: [],
+        errorMessage: `⚠️ WakeUp 接口返回错误：「${msg}」。\n\n💡 提示：口令可能已过期（通常 30 分钟内有效）。若使用的并非 6.0.23 版本，建议降级后再试：\nhttps://github.com/VincentZyuApps/koishi-plugin-course-schedule/releases/download/WakeUp6.0.23/WakeUp_6.0.23.apk`,
+      }
+    }
+
     const courses = services.icsParser.convertWakeupPayload(String(response.data), channelId, targetUser)
     services.log('[bind] WakeUp 解析完成, 课程数=', courses.length)
-    return courses
+    return { courses }
   }
 
   // 2. 星链课表关键词
@@ -171,10 +230,19 @@ async function parseSourceText(
         }
         const courses = await starlinkParser.fetchAndParse(ctx, codeMatch[1], channelId, targetUser, userTimeSlots ?? undefined)
         services.log('[bind] 星链课表解析完成, 课程数=', courses.length)
-        return courses
+        if (!courses.length) {
+          return {
+            courses: [],
+            errorMessage: '⚠️ 星链课表解析结果为空。分享码可能已过期（通常 1 小时内有效），请在星链 App 内重新生成分享码。',
+          }
+        }
+        return { courses }
       } catch (e: any) {
         services.log('[bind] 星链课表 API 请求失败:', e.message)
-        return []
+        return {
+          courses: [],
+          errorMessage: `❌ 请求星链课表接口失败：${e.message}`,
+        }
       }
     }
   }
@@ -194,12 +262,16 @@ async function parseSourceText(
         }
         const courses = starlinkParser.convertStarlinkJson(parsed, channelId, targetUser, userTimeSlots ?? undefined)
         services.log('[bind] 星链 JSON 解析完成, 课程数=', courses.length)
-        return courses
+        return { courses }
       }
       const jsonCourses = jsonParser.parseJsonText(trimmed, channelId, targetUser)
       if (jsonCourses) {
         services.log('[bind] JSON 课表解析完成, 课程数=', jsonCourses.length)
-        return jsonCourses
+        return { courses: jsonCourses }
+      }
+      return {
+        courses: [],
+        errorMessage: '❌ JSON 课表解析失败：未识别到有效课程。请检查是否符合 Yunzai 原生 JSON 或星链课表 JSON 规范。',
       }
     }
   }
@@ -210,7 +282,7 @@ async function parseSourceText(
     const courses = wakeupFileParser.parseWakeupFileText(trimmed, channelId, targetUser)
     if (courses) {
       services.log('[bind] WakeUp 备份文件解析完成, 课程数=', courses.length)
-      return courses
+      return { courses }
     }
   }
 
@@ -229,7 +301,7 @@ async function parseSourceText(
   }
   const courses = services.icsParser.parseIcsText(icsText, channelId, targetUser)
   services.log('[bind] ICS 解析完成, 课程数=', courses.length)
-  return courses
+  return { courses }
 }
 
 function isWakeupFileFormat(text: string): boolean {

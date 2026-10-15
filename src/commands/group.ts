@@ -2,11 +2,11 @@ import { h } from 'koishi'
 import type { Context } from 'koishi'
 import type { Config } from '../config'
 import type { CourseScheduleServices } from '../services'
-import { buildNameMap } from '../utils/name-resolver'
+import { buildNameMap } from '../utils/name'
 import { parseDayOffset } from '../utils/date'
 
 export function registerGroupCommand(ctx: Context, config: Config, services: CourseScheduleServices) {
-  ctx.command(`${config.baseCommand}.${config.groupCommand} [day:text]`, `👥 获取所有已导入用户某天的全部课程`)
+  ctx.command(`${config.baseCommand}.${config.groupCommand} [day:text]`, `👥 获取本群群友某天的全部课程`)
     .action(async ({ session }, day) => {
       const dayOffset = parseDayOffset(day)
       const doQuote = config.enableQuote ? h.quote(session.messageId) : ''

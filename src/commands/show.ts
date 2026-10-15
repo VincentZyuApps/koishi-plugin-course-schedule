@@ -2,7 +2,7 @@ import { h } from 'koishi'
 import type { Context } from 'koishi'
 import type { Config } from '../config'
 import type { CourseScheduleServices } from '../services'
-import { buildSingleNameMap } from '../utils/name-resolver'
+import { buildSingleNameMap } from '../utils/name'
 import { parseDayOffset } from '../utils/date'
 
 export function registerShowCommand(ctx: Context, config: Config, services: CourseScheduleServices) {

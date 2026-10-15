@@ -1,5 +1,5 @@
-import type { CourseRecord, TargetUser } from '../types'
-import { toIsoDate } from '../utils/date'
+import type { CourseRecord, TargetUser } from '../../types'
+import { toIsoDate } from '../../utils/date'
 
 interface TimeSlot {
   number: number
@@ -49,7 +49,7 @@ interface NativeJson {
   tableName?: string
 }
 
-export class JsonParser {
+export class ShiguangNativeParser {
   parseJsonText(
     text: string,
     channelId: string,
@@ -235,3 +235,6 @@ export class JsonParser {
     return weeks
   }
 }
+
+export { ShiguangNativeParser as JsonParser }
+

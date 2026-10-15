@@ -12,7 +12,9 @@
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/VincentZyu233/koishi-plugin-course-schedule)
 [![Gitee](https://img.shields.io/badge/Gitee-C71D23?style=for-the-badge&logo=gitee&logoColor=white)](https://gitee.com/vincent-zyu/koishi-plugin-course-schedule)
 
-[![QQ群](https://img.shields.io/badge/QQ群-1085190201-1AAD19?style=flat-square)](https://qm.qq.com/q/ZN7fxZ3qCq)
+[![Koishi Forum](https://img.shields.io/badge/Koishi%20Forum-12565-5546A3?style=for-the-badge&logo=data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAABU0lEQVR42p2UQSsFYRSGnxnqLuytKWKpKFkQNsS%2FsOHPWPADLCmxU5S7UzYWNrJR7lYiRF2FeWzOMKZ7mXHqNNP5vvP2nu%2B850CY2lP4X1K31ZbaDm%2BpO%2Bpyp5wfAXVEPfRvO1JHf4AVQGbUh7j4EZ4VkrNCXPVRnf3CUBN1SH2KC28VGOV3ntRhNclZHdcAKYM11QR1oVBOXctzFlNgBTC8qmXxPQEegbVeYApIgJT6tg%2F0AdMp0B%2FBpCabK2AAmAAa%2F2GRBft1oBFPkqTAba7LCiAfQC9wClwAY1HJHepuiO29Yrsf1Dn1uiDU3RTYCtTkl1Leg8k9MB4NGgReI28rV3azgyCz0og01Xl1Uz1QX8uCTELm3UbkTF1VJ9Wr0tn3iBSGdjYG0XivE3VN3VD31PM4a3cc2tIGGI0VkTO7rLxGuiy25ejmjfqsvkSXui62TxaK03td4FXTAAAAAElFTkSuQmCC&logoColor=white)](https://forum.koishi.xyz/t/topic/12565)
+
+[![QQ群](https://img.shields.io/badge/QQ群-1085190201-12B7F5?style=flat-square&logo=qq&logoColor=white)](https://qm.qq.com/q/ZN7fxZ3qCq)
 
 <p><del>💬 插件使用问题 / 🐛 Bug反馈 / 👨‍💻 插件开发交流，欢迎加入QQ群：<b>259248174</b> 🎉（这个群G了）</del></p>
 <p>💬 插件使用问题 / 🐛 Bug反馈 / 👨‍💻 插件开发交流，欢迎加入新QQ群：<b>1085190201</b> 🎉</p>
@@ -31,10 +33,10 @@
 **个人课表** — 查看自己某天的全部课程
 ![个人课表](docs/images/preview.课表.查看.png)
 
-**群课表** — 查看所有已导入用户某天的课程
+**群课表** — 查看本群群友某天的课程
 ![群课表](docs/images/preview.课表.群课表.png)
 
-**本周排行** — 查看本周上课时长排行榜
+**本周排行** — 查看本周本群上课时长排行榜
 ![本周排行](docs/images/preview.课表.排行.png)
 
 **周课表** — 查看个人周课表纵览
@@ -46,27 +48,28 @@
 
 | 格式 | 说明 | 状态 | 指令 |
 |------|------|:----:|------|
-| **WakeUp 分享口令** | 发送分享口令即可导入。⚠️ 需使用旧版 6.0.x，建议 6.0.23。📤 获取：右上角分享图标 → 在线分享课表 → 点击复制/分享 | ✅ 实测可用 | 课表.绑定 |
-| **WakeUp 备份文件** | 支持 `.wakeup_schedule` 备份文件导入 | ⏳ 待测/待完善 | 课表.绑定 |
-| **星链分享码** | 发送星链分享码即可导入。📤 获取：右上角竖着的三个点 → 倒数第二行 分享课表 → 在线分享 → 点击复制分享码 | ✅ 实测可用 | 课表.绑定 |
-| **星链 JSON** | 粘贴星链课表 JSON。📤 获取：右上角竖着的三个点 → 倒数第二行 分享课表 → 导出课表文件 → 发送到聊天平台（[格式说明](docs/各种课表格式/星链课表JSON格式.md)） | ✅ 实测可用 | 课表.绑定 |
-| **星链格式时间表** | 通过自定义时间段 JSON 上传，绑定星链课表时自动应用 | ✅ 实测可用 | 课表.设置星链时间表 |
-| **[Yunzai 插件](https://github.com/Temmie0125/Yunzai-Schedule-Plugin)原生 JSON** | 兼容 Yunzai Schedule Plugin 的原生 JSON 格式，时间信息直接存储，**推荐手动构造课表时使用**（比如截图本学期全部课表图片（如果你的教务平台支持的话），然后让识图 AI 转换成 Yunzai JSON 格式，需要同时让 AI 参考 [Yunzai 插件源代码](https://github.com/Temmie0125/Yunzai-Schedule-Plugin) 或 [JSON 格式说明文档](docs/各种课表格式/Yunzai-Schedule-Plugin原生JSON格式.md)） | ✅ 实测可用 | 课表.绑定 |
+| **WakeUp 分享口令** | 发送分享口令即可导入。⚠️ 需使用旧版 6.0.x，建议 6.0.23。📤 获取：右上角分享图标 → 在线分享课表 → 点击复制/分享（[格式与口令说明](docs/formats/wakeup-schedule.md)） | ✅ 实测可用 | 课表.绑定 |
+| **WakeUp 备份文件** | 支持 `.wakeup_schedule` 备份文件导入（[说明](docs/formats/wakeup-schedule.md)） | ⏳ 待测/待完善 | 课表.绑定 |
+| **星链分享码** | 发送星链分享码即可导入。📤 获取：右上角竖着的三个点 → 倒数第二行 分享课表 → 在线分享 → 点击复制分享码（[规范说明](docs/formats/starlink-schedule.md)） | ✅ 实测可用 | 课表.绑定 |
+| **星链 JSON** | 粘贴星链课表 JSON。📤 获取：右上角竖着的三个点 → 倒数第二行 分享课表 → 导出课表文件 → 发送到聊天平台（[格式说明](docs/formats/starlink-schedule.md)） | ✅ 实测可用 | 课表.绑定 |
+| **星链格式时间表** | 通过自定义时间段 JSON 上传，绑定星链课表时自动应用，设置后自动刷新现有课程时间 | ✅ 实测可用 | 课表.设置星链时间表 |
+| **[Yunzai 插件](https://github.com/Temmie0125/Yunzai-Schedule-Plugin)原生 JSON** | 兼容 Yunzai Schedule Plugin 的原生 JSON 格式，时间信息直接存储，**推荐手动构造课表时使用**（比如截图本学期全部课表图片（如果你的教务平台支持的话），然后让识图 AI 转换成 Yunzai JSON 格式，需要同时让 AI 参考 [Yunzai 插件源代码](https://github.com/Temmie0125/Yunzai-Schedule-Plugin) 或 [JSON 格式说明文档](docs/formats/yunzai-schedule-plugin-json.md)） | ✅ 实测可用 | 课表.绑定 |
 | **拾光课表 JSON** | 兼容拾光课程表 App 的导出 JSON | ⏳ 待测/待完善 | 课表.绑定 |
 | **ICS 文件/链接** | 支持 `.ics` 文件上传或 ICS 链接下载解析 | ⏳ 待测/待完善 | 课表.绑定 |
 
-> ✅ **实测可用** = 经过测试，功能正常可用
-> ⏳ **待测/待完善** = 目前尚未支持/完善，未来可能支持，仍在计划中
+> ✅ **实测可用** = 经过测试，功能正常可用  
+> ⏳ **待测/待完善** = 目前尚未支持/完善，未来可能支持，仍在计划中  
+> 📖 **格式汇总与对比**：详见 [docs/formats/README.md](docs/formats/README.md)
 
 ### 📋 可用命令
 
 ```
+课表.查看当日 [天]       — 查看个人某天课程
+课表.查看本周 [周数]      — 查看个人周课表纵览
+课表.查看本群 [天]       — 查看本群群友某天的课程
+课表.本群周排行          — 查看本周本群上课时长排行榜
 课表.绑定 <文本>         — 导入课表数据（建议使用文本：分享码/JSON，交互式传文件可能有问题）
-课表.设置星链时间表       — 设置星链课表时间表（用户自定义时间段）
-课表.查看 [天]           — 查看个人某天课程
-课表.群课表 [天]         — 查看所有已导入用户某天的课程
-课表.排行                — 查看本周上课时长排行榜
-课表.周课表 [周数]        — 查看个人周课表纵览
+课表.设置星链时间表       — 设置星链课表时间表（用户自定义时间段，自动刷新课表时间）
 ```
 
 > 命令名称可在插件配置中自定义。
@@ -84,9 +87,10 @@
 >   因此在不同的导入方案中，**最佳选择是降级 WakeUp 到作者同款版本**（作者实测确认可用）：
 >   作者使用的版本：**6.0.23**
 >   - [![Release APK - GitHub](https://img.shields.io/badge/Release_APK-GitHub-181717?style=flat-square&logo=github)](https://github.com/VincentZyuApps/koishi-plugin-course-schedule/releases/download/WakeUp6.0.23/WakeUp_6.0.23.apk)
->   - [![Release APK - Gitee](https://img.shields.io/badge/Release_APK-Gitee-C71D23?style=flat-square&logo=gitee)](https://gitee.com/vincent-zyu/koishi-plugin-course-schedule/releases/download/WakeUp6.0.23/WakeUp_6.0.23.apk)
+>   - 📖 详见 [WakeUp 课程表规范与分享口令文档](docs/formats/wakeup-schedule.md)
 > - **星链课表** — _对于作者自己的学校教务网站_：没有直接的学校教务导入选项，通用的 AI 导入工具也无法使用。作者目前的导入方式：浏览器 F12 下载课表 HTML 数据 → 让 AI（如 OpenCode / Codex / Gemini）参考本地 HTML 结构与课表截图识别，生成符合星链 JSON 格式的文件 → 复制 JSON → 星链 App 右上角「+」→ 一键导课 → 粘贴 JSON → 点击 AI 解析即可完成导入。
->   - 💡 **时间修改提示**：星链的分享码或JSON导出不包含时间信息，每节课的时间信息需要单独导出。请使用「课表.设置星链时间表」上传时间表 JSON。📤 导出方法：星链 App 右上角竖着的三个点 → 上课时间 → 点击时间表 → ✏️ 编辑符号 → 修改时间，然后点击分享符号导出时间 JSON
+>   - 💡 **时间修改提示**：星链的分享码或JSON导出不包含时间信息，每节课的时间信息需要单独导出。请使用「课表.设置星链时间表」上传时间表 JSON（保存后自动为已有课程刷新上课时间）。📤 导出方法：星链 App 右上角竖着的三个点 → 上课时间 → 点击时间表 → ✏️ 编辑符号 → 修改时间，然后点击分享符号导出时间 JSON
+>   - 📖 详见 [星链课表规范与分享码文档](docs/formats/starlink-schedule.md)
 > - **拾光课程表** — 作者暂时无法成功导入
 >
 > 如果你遇到了导入问题，欢迎加群反馈，帮助逐步完善适配 🙏 艾特作者回复更快哦~ @VincentZyu
@@ -134,10 +138,11 @@ yarn add koishi-plugin-course-schedule
 | `baseCommand` | `课表` | 父级指令名称 |
 | `bindCommand` | `绑定` | 绑定课表命令名 |
 | `timetableCommand` | `设置星链时间表` | 设置星链时间表命令名 |
-| `showCommand` | `查看` | 查看个人课表命令名 |
-| `groupCommand` | `群课表` | 查看所有已导入用户课表命令名 |
-| `rankingCommand` | `排行` | 查看本周排行命令名 |
-| `weekCommand` | `周课表` | 查看周课表命令名 |
+| `showCommand` | `查看当日` | 查看个人某天课程命令名 |
+| `groupCommand` | `查看本群` | 查看本群群友某天课程命令名 |
+| `rankingCommand` | `本群周排行` | 查看本群本周上课排行命令名 |
+| `weekCommand` | `查看本周` | 查看个人周课表纵览命令名 |
+| `defaultSemesterStart` | `2026-09-07` | 📅 默认开学日期（严格 YYYY-MM-DD，兜底计算开学周） |
 | `renderWaitUntil` | `load` | Puppeteer 渲染等待策略 |
 | `textFontMode` | `npm` | 字体模式：`npm`（默认）/ `release` / `custom` / `none` |
 | `textFontPath` | `(空)` | 本地字体文件绝对路径，仅在 `textFontMode` 为 `custom` 时生效 |

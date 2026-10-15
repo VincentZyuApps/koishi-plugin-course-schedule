@@ -38,8 +38,39 @@ export function registerTimetableCommand(
       services.log('[timetable] 解析成功, 共', timeSlots.length, '个时间段:', JSON.stringify(timeSlots))
       await timeSlotManager.saveTimeSlots(userId, timeSlots)
       services.log('[timetable] 时间表已保存到缓存')
+
+      // 自动刷新该用户已有的课程作息时间，彻底免去二次绑定的繁琐！
+      let updatedCourseCount = 0
+      try {
+        const userCourses = await ctx.database.get('course_schedule', { userid: userId })
+        for (const course of userCourses) {
+          if (course.startNode && course.step) {
+            const startSec = course.startNode
+            const endSec = course.startNode + course.step - 1
+            let startTime = ''
+            let endTime = ''
+            for (let i = startSec; i <= endSec; i++) {
+              const slot = timeSlots.find(s => s.section === i)
+              if (!slot) continue
+              if (!startTime) startTime = slot.startTime.slice(0, 5)
+              endTime = slot.endTime.slice(0, 5)
+            }
+            if (startTime && endTime) {
+              const newTime = `${startTime}-${endTime}`
+              if (newTime !== course.curriculumtime) {
+                await ctx.database.set('course_schedule', { id: course.id }, { curriculumtime: newTime })
+                updatedCourseCount++
+              }
+            }
+          }
+        }
+      } catch (err: any) {
+        services.log('[timetable] 自动刷新已有课程时间失败:', err?.message)
+      }
+
       const doQuote = config.enableQuote ? h.quote(session.messageId) : ''
-      return `${doQuote}✅ 已保存 ${timeSlots.length} 个时间段。`
+      const updateHint = updatedCourseCount > 0 ? `\n🎉 已自动同步刷新您现有的 ${updatedCourseCount} 门课程时间，无需重新导入课表！` : ''
+      return `${doQuote}✅ 已保存 ${timeSlots.length} 个时间段。${updateHint}`
     })
 }
 

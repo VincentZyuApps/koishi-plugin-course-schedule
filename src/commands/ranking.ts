@@ -2,10 +2,10 @@ import { h } from 'koishi'
 import type { Context } from 'koishi'
 import type { Config } from '../config'
 import type { CourseScheduleServices } from '../services'
-import { buildNameMap } from '../utils/name-resolver'
+import { buildNameMap } from '../utils/name'
 
 export function registerRankingCommand(ctx: Context, config: Config, services: CourseScheduleServices) {
-  ctx.command(`${config.baseCommand}.${config.rankingCommand}`, `📊 查看本周上课排行榜`)
+  ctx.command(`${config.baseCommand}.${config.rankingCommand}`, `📊 查看本群本周上课排行榜`)
     .action(async ({ session }) => {
       const doQuote = config.enableQuote ? h.quote(session.messageId) : ''
       services.log('[ranking] 频道=', session.channelId)

@@ -31,8 +31,10 @@ export interface Config {
   // 💬 消息设置
   enableQuote: boolean
   enableWatingHint: boolean
-  starlinkTimeHint: boolean
+  enableStarlinkTimeHint: boolean
   starlinkTimeHintText: string
+  enableTimetableInBindHint: boolean
+  timetableInBindHintText: string
   bindPromptText: string
 
   // ⚙️ 指令设置
@@ -44,11 +46,17 @@ export interface Config {
   rankingCommand: string
   weekCommand: string
 
+  // 📅 学期设置
+  defaultSemesterStart: string
+
   // 🖼️ 渲染设置
   renderWaitUntil: 'load' | 'domcontentloaded' | 'networkidle0' | 'networkidle2'
   textFontMode: TextFontMode
   textFontPath: string
   renderFooterText: string
+
+  // 🎭 用户名显示样式
+  nameDisplayStyle: 'name-only' | 'name-card' | 'card-name' | 'card-only'
 
   // 📁 文件设置
   scheduleFileTempDir: string
@@ -57,9 +65,6 @@ export interface Config {
 
   // 🎨 渲染颜色设置
   renderColors: RenderColors
-
-  // 🎭 用户名显示样式
-  nameDisplayStyle: 'name-only' | 'name-card' | 'card-name' | 'card-only'
 
   // 🐛 调试设置
   verboseConsoleLog: boolean
@@ -71,9 +76,11 @@ export const Config: Schema<Config> = Schema.intersect([
   Schema.object({
     enableQuote: Schema.boolean().default(true).description('💬 开启后，本插件发送的所有消息都会引用回复触发指令的消息'),
     enableWatingHint: Schema.boolean().default(true).description('⏳ 是否启用「渲染中，请稍候...」提示消息'),
-    starlinkTimeHint: Schema.boolean().default(true).description('⭐ 检测到星链课表时，回复提示消息引导用户使用设置星链时间表命令'),
+    enableStarlinkTimeHint: Schema.boolean().default(true).description('⭐ 检测到星链课表时，回复提示消息引导用户使用设置星链时间表命令'),
     starlinkTimeHintText: Schema.string().default('⭐ 星链的分享码或JSON导出不包含时间信息，每节课的时间信息需要单独导出。\n\n请使用「{baseCommand}.{timetableCommand}」上传时间表 JSON。\n\n📤 导出方法：星链 App 右上角竖着的三个点 → 上课时间 → 点击时间表 → ✏️ 编辑符号 → 修改时间，然后点击分享符号导出时间 JSON').role('textarea', { rows: [3, 10] }).description('📝 检测到星链课表时发送的提示文本（支持换行，可用 {baseCommand} 和 {timetableCommand} 占位符）'),
-    bindPromptText: Schema.string().default('📥 请发送以下格式的课表数据：\n\t • Yunzai 插件原生 JSON — 粘贴 JSON 文本即可（推荐）\n\t • 星链课表 — 发送分享码或 JSON\n\t • WakeUp 课程表（旧版本 6.0.x）— 发送分享口令\n\n💡 未来可能识别更多格式，请阅读插件 readme.md 或 Koishi WebUI → 插件 usage 查看更新计划。\n\n----------\n\n⚠️ 注意：交互式发送文件可能有兼容问题，建议使用交互式发送文本（分享码或 JSON）或直接在指令后附加参数（课表.绑定 [分享码 / JSON 等]）\n\n----------\n\n⚠️ 提示：WakeUp 课程表高版本已对 API 加强限制 🔒，≥ 6.1.x 无法使用分享口令绑定。如仍在使用新版 WakeUp，建议降级到 6.0.23 ⬇️：\nhttps://gitee.com/vincent-zyu/koishi-plugin-course-schedule/releases/download/WakeUp6.0.23/WakeUp_6.0.23.apk\n\n📖 Yunzai 原生 JSON 格式说明：\nhttps://gitee.com/vincent-zyu/koishi-plugin-course-schedule/blob/main/docs/各种课表格式/Yunzai-Schedule-Plugin原生JSON格式.md').role('textarea', { rows: [3, 10] }).description('📝 绑定指令触发交互式等待时发送的提示文本（支持换行）'),
+    enableTimetableInBindHint: Schema.boolean().default(true).description('⏰ 在绑定命令中检测到误发送作息时间表 JSON 时，发送引导提示引导使用设置星链时间表命令'),
+    timetableInBindHintText: Schema.string().default('⚠️ 检测到您发送的是「星链作息时间表」，而不是课程表！\n\n请使用专门的时间表设置指令：\n👉 「{baseCommand}.{timetableCommand}」\n\n💡 设置后将自动同步更新您的课表时间，无需重复导入。').role('textarea', { rows: [3, 10] }).description('📝 在绑定命令中检测到作息时间表时发送的提示文本（支持换行，可用 {baseCommand} 和 {timetableCommand} 占位符）'),
+    bindPromptText: Schema.string().default('📥 请发送以下格式的课表数据：\n\t • Yunzai 插件原生 JSON — 粘贴 JSON 文本即可（推荐）\n\t • 星链课表 — 发送分享码或 JSON\n\t • WakeUp 课程表（旧版本 6.0.x）— 发送分享口令\n\n💡 未来可能识别更多格式，请阅读插件 readme.md 或 Koishi WebUI → 插件 usage 查看更新计划。\n\n----------\n\n⚠️ 注意：交互式发送文件可能有兼容问题，建议使用交互式发送文本（分享码或 JSON）或直接在指令后附加参数（课表.绑定 [分享码 / JSON 等]）\n\n----------\n\n⚠️ 提示：WakeUp 课程表高版本已对 API 加强限制 🔒，≥ 6.1.x 无法使用分享口令绑定。如仍在使用新版 WakeUp，建议降级到 6.0.23 ⬇️：\nhttps://github.com/VincentZyuApps/koishi-plugin-course-schedule/releases/download/WakeUp6.0.23/WakeUp_6.0.23.apk\n\n📖 Yunzai 原生 JSON 格式说明：\nhttps://github.com/VincentZyu233/koishi-plugin-course-schedule/blob/main/docs/formats/yunzai-schedule-plugin-json.md').role('textarea', { rows: [3, 10] }).description('📝 绑定指令触发交互式等待时发送的提示文本（支持换行）'),
   }).description('💬 消息设置'),
 
   // ⚙️ 指令设置
@@ -82,11 +89,19 @@ export const Config: Schema<Config> = Schema.intersect([
     __split__: Schema.string().disabled().default('上面是父级指令，下面是字指令').description('_____————上面是父级指令，下面是字指令————_____'),
     bindCommand: Schema.string().default('绑定').description('📥 绑定课表命令名'),
     timetableCommand: Schema.string().default('设置星链时间表').description('⏰ 设置星链时间表命令名'),
-    showCommand: Schema.string().default('查看').description('👁️ 查看个人课表命令名'),
-    groupCommand: Schema.string().default('群课表').description('👥 查看所有已导入用户课表命令名'),
-    rankingCommand: Schema.string().default('排行').description('🏆 查看本周排行命令名'),
-    weekCommand: Schema.string().default('周课表').description('📅 查看周课表命令名'),
+    showCommand: Schema.string().default('查看当日').description('📋 查看个人某天课程命令名'),
+    groupCommand: Schema.string().default('查看本群').description('👥 查看本群群友某天课程命令名'),
+    rankingCommand: Schema.string().default('本群周排行').description('🏆 查看本群本周上课排行命令名'),
+    weekCommand: Schema.string().default('查看本周').description('📅 查看个人周课表纵览命令名'),
   }).description('⚙️ 指令设置'),
+
+  // 📅 学期设置
+  Schema.object({
+    defaultSemesterStart: Schema.string()
+      .pattern(/^\d{4}-\d{2}-\d{2}$/)
+      .default('2026-09-07')
+      .description('📅 默认开学日期（严格格式：YYYY-MM-DD，如 2026-09-07）。当导入的课表未提供开学日期时作为全局兜底计算，底层会自动对齐至该周周一。'),
+  }).description('📅 学期设置'),
 
   // 🖼️ 渲染设置
   Schema.object({
@@ -106,6 +121,16 @@ export const Config: Schema<Config> = Schema.intersect([
     renderFooterText: Schema.string().default('📚📅🤖 Generated by koishi-plugin-course-schedule\n🌐 Gitee repo: https://gitee.com/vincent-zyu/koishi-plugin-course-schedule').role('textarea', { rows: [3, 10] }).description('📝 图片底部文字（支持换行，留空则不显示）'),
   }).description('🖼️ 渲染设置'),
 
+  // 🎭 用户名显示样式
+  Schema.object({
+    nameDisplayStyle: Schema.union([
+      Schema.const('name-only').description('🏷️ 只显示用户名'),
+      Schema.const('name-card').description('🏷️🪪 用户名（群名片）'),
+      Schema.const('card-name').description('🪪🏷️ 群名片（用户名）'),
+      Schema.const('card-only').description('🪪 只显示群名片'),
+    ]).default('name-card').description('🎭 用户名显示样式<br/><i>（群名片为空时始终显示用户名）</i>'),
+  }).description('🎭 用户名显示样式'),
+
   // 📁 文件设置
   Schema.object({
     scheduleFileTempDir: Schema.string().default(path.resolve(__dirname, '..', 'cache', 'files')).role('textarea', { rows: [2, 5] }).description('📁 课表文件临时目录（绝对路径）'),
@@ -117,16 +142,6 @@ export const Config: Schema<Config> = Schema.intersect([
   Schema.object({
     renderColors: RenderColorsSchema,
   }).role('table').default({ renderColors: defaultColors }).description('🎨 渲染颜色设置'),
-
-  // 🎭 用户名显示样式
-  Schema.object({
-    nameDisplayStyle: Schema.union([
-      Schema.const('name-only').description('🏷️ 只显示用户名'),
-      Schema.const('name-card').description('🏷️🪪 用户名（群名片）'),
-      Schema.const('card-name').description('🪪🏷️ 群名片（用户名）'),
-      Schema.const('card-only').description('🪪 只显示群名片'),
-    ]).default('name-card').description('🎭 用户名显示样式<br/><i>（群名片为空时始终显示用户名）</i>'),
-  }).description('🎭 用户名显示样式'),
 
   // 🐛 调试设置
   Schema.object({
@@ -147,3 +162,12 @@ export function formatDisplayName(username: string, nickname: string | undefined
       return username
   }
 }
+
+export function normalizeSemesterStartDate(input?: string): string {
+  if (input && /^\d{4}-\d{2}-\d{2}$/.test(input.trim())) {
+    return input.trim()
+  }
+  return '2026-09-07'
+}
+
+

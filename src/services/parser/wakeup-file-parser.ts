@@ -1,5 +1,5 @@
-import type { CourseRecord, TargetUser } from '../types'
-import { toIsoDate } from '../utils/date'
+import type { CourseRecord, TargetUser } from '../../types'
+import { toIsoDate } from '../../utils/date'
 
 interface WakeupTimeSlot {
   node: number
